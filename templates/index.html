@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        input, button { padding: 10px; margin: 5px; width: 300px; }
+        #shortUrl { display: none; margin-top: 20px; font-size: 18px; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+    <h2>Simple URL Shortener</h2>
+
+    <input type="text" id="longUrl" placeholder="Enter your long URL here...">
+    <button onclick="shortenUrl()">Shorten URL</button>
+
+    <div id="shortUrl">
+        <p>Short URL: <a id="shortUrlLink" href="#" target="_blank"></a></p>
+    </div>
+
+    <h3>Stored URLs</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Short URL</th>
+                <th>Long URL</th>
+                <th>Clicks</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody id="urlTableBody">
+        </tbody>
+    </table>
+
+    <script>
+        function shortenUrl() {
+            const longUrl = document.getElementById("longUrl").value;
+            fetch("/shorten", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ longUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.short_url) {
+                    document.getElementById("shortUrl").style.display = "block";
+                    document.getElementById("shortUrlLink").href = data.short_url;
+                    document.getElementById("shortUrlLink").textContent = data.short_url;
+                    fetchUrls(); // Refresh table after adding new URL
+                } else {
+                    alert("Error: " + data.error);
+                }
+            });
+        }
+
+        function fetchUrls() {
+            fetch("/urls")
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById("urlTableBody");
+                tableBody.innerHTML = "";
+                data.forEach(url => {
+                    const row = `<tr>
+                        <td><a href="${url.short_url}" target="_blank">${url.short_url}</a></td>
+                        <td>${url.long_url}</td>
+                        <td>${url.clicks}</td>
+                        <td>${url.is_active ? "Yes" : "No"}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            });
+        }
+
+        // Fetch URLs when page loads
+        fetchUrls();
+    </script>
+
+</body>
+</html>
